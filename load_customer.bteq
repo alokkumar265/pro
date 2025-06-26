@@ -1,0 +1,35 @@
+-- BTEQ script to load customer_data.csv into Retail_Industry.Customer_dim_table
+-- Save this script as load_customer.bteq and run in your Teradata BTEQ environment
+
+.LOGON your_teradata_server/your_username,your_password;
+
+DATABASE Retail_Industry;
+
+.SET RECORDMODE OFF;
+.SET WIDTH 254;
+
+.IMPORT VARTEXT ',' FILE = 'customer_data.csv'
+LAYOUT customer_layout;
+FIELD customer_id      * VARCHAR(20);
+FIELD cust_name        * VARCHAR(100);
+FIELD cust_age         * INTEGER;
+FIELD cust_gndr        * CHAR(1);
+FIELD cust_address     * VARCHAR(255);
+FIELD start_date       * VARCHAR(20);
+FIELD end_date         * VARCHAR(20);
+FIELD current_flag     * INTEGER;
+
+DML LABEL insert_customer;
+INSERT INTO Customer_dim_table (
+    customer_id, cust_name, cust_age, cust_gndr, cust_address, start_date, end_date, current_flag
+) VALUES (
+    :customer_id, :cust_name, :cust_age, :cust_gndr, :cust_address,
+    CAST(:start_date AS DATE FORMAT 'YYYY-MM-DD'),
+    CASE WHEN :end_date = 'NULL' THEN NULL ELSE CAST(:end_date AS DATE FORMAT 'YYYY-MM-DD') END,
+    :current_flag
+);
+
+.IMPORT VARTEXT ',' FILE = 'customer_data.csv' LAYOUT customer_layout APPLY insert_customer;
+
+.LOGOFF;
+.QUIT;
